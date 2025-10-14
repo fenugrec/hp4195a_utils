@@ -30,7 +30,7 @@ if not idstring.startswith('HP4195'):
 
 
 res = h4
-res.write('CPYM2')
+res.write('CPYM1')
 res.write('PLTF1')
 header=res.query('SENDPS') # only for CPYM1 !
 pltdata=res.query('COPY')
