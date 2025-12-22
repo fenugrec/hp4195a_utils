@@ -2,10 +2,17 @@
 
 # fenugrec 2025
 # save a screenshot of HP 4195A
+# if 'hp2xx' program is found, will invoke that to render the HPGL to a more friendly format.
 
 import pyvisa
 import argparse
 import sys
+import shutil
+import subprocess
+
+######## configurable hp2xx invocation
+hp2xx_args = ['-m', 'png', '-q', '-c651143']
+hp2xx_bin = shutil.which('hp2xx')
 
 parser = argparse.ArgumentParser(description="HP 4195A screenshot tool")
 parser.add_argument('-r', '--res', help='optional, full VISA resource string like TCPIP::x.y.z.w::5025::SOCKET')
@@ -25,7 +32,9 @@ if args.file.endswith('.plt'):
     print("error, specify only a base filename with no extension")
     quit()
 
-rfile=open(args.file + ".plt", 'w')
+# TODO : warn if file exists before clobbering
+pltfilename = args.file + ".plt"
+rfile=open(pltfilename, 'wb')
 
 rm = pyvisa.ResourceManager()
 h4 = rm.open_resource(resource)
@@ -43,15 +52,26 @@ if cmt:
     if not cmt.isascii():
         print("comment can only contain ascii chars !")
         quit()
-    cmt = cmt.encode(encoding='ascii')
     if len(cmt) > CMT_MAXLEN:
         print(f"Warning ! max 26 chars for comment. Truncating to '{cmt}'")
         cmt = cmt[:CMT_MAXLEN+1]
     res.write(f'CMT"{cmt}"')
 res.write('CPYM1')
 res.write('PLTF1')
-header=res.query('SENDPS') # only for CPYM1 !
-pltdata=res.query('COPY')
-rfile.write(header + pltdata)
+res.write('SENDPS') # only for CPYM1 !
+header=res.read_raw()
+res.write('COPY')
+pltdata=res.read_raw()
+
+rfile.write(header)
+rfile.write(pltdata)
+rfile.close()
 
 
+if hp2xx_bin is None:
+    print("optional hp2xx binary (conversion to raster image) not found")
+else:
+#    hp2xx_cmd = f'{hp2xx_bin} "{pltfilename}" {hp2xx_args}'
+    hp2xx_cmd = [hp2xx_bin, pltfilename, *hp2xx_args]
+    print(f" running '{(hp2xx_cmd)}'")
+    subprocess.run(hp2xx_cmd)
