@@ -10,7 +10,7 @@ import sys
 parser = argparse.ArgumentParser(description="HP 4195A screenshot tool")
 parser.add_argument('-r', '--res', help='optional, full VISA resource string like TCPIP::x.y.z.w::5025::SOCKET')
 parser.add_argument('-c', '--cmt', help='optional, plot top comment')
-parser.add_argument('-f', '--file', required=True, type=argparse.FileType('w'), help='output filename')
+parser.add_argument('-f', '--file', required=True, help='output file basename (no extension)')
 args = parser.parse_args(sys.argv[1:])
 
 cmt = args.cmt
@@ -19,7 +19,13 @@ if not args.res:
 else:
     resource=args.res
 
-rfile=args.file
+# don't go crazy with os.path.splitext, just check if .plt was mistakenly provided;
+# don't break valid basenames like "test 1.5k" that happen to look like an extension
+if args.file.endswith('.plt'):
+    print("error, specify only a base filename with no extension")
+    quit()
+
+rfile=open(args.file + ".plt", 'w')
 
 rm = pyvisa.ResourceManager()
 h4 = rm.open_resource(resource)
@@ -48,18 +54,4 @@ header=res.query('SENDPS') # only for CPYM1 !
 pltdata=res.query('COPY')
 rfile.write(header + pltdata)
 
-
-# try to set extension automagically based on contents
-def save_scrn(imgdata, basename=None):
-    if not basename:
-        basename = time.strftime('%Y%m%d_%H%M%S')
-    if imgdata.startswith(b'%!PS'):
-        filename = basename + '.eps'
-    elif imgdata.startswith(b'\x0a\x05\x01\x08'):
-        filename = basename + '.pcx'
-    else:
-        filename = basename + '.plt'
-
-    with open(filename,"wb") as f:
-        f.write(imgdata)
 
