@@ -9,9 +9,11 @@ import sys
 
 parser = argparse.ArgumentParser(description="HP 4195A screenshot tool")
 parser.add_argument('-r', '--res', help='optional, full VISA resource string like TCPIP::x.y.z.w::5025::SOCKET')
+parser.add_argument('-c', '--cmt', help='optional, plot top comment')
 parser.add_argument('-f', '--file', required=True, type=argparse.FileType('w'), help='output filename')
 args = parser.parse_args(sys.argv[1:])
 
+cmt = args.cmt
 if not args.res:
     resource = 'GPIB0::17::INSTR'
 else:
@@ -30,6 +32,16 @@ if not idstring.startswith('HP4195'):
 
 
 res = h4
+CMT_MAXLEN = 26
+if cmt:
+    if not cmt.isascii():
+        print("comment can only contain ascii chars !")
+        quit()
+    cmt = cmt.encode(encoding='ascii')
+    if len(cmt) > CMT_MAXLEN:
+        print(f"Warning ! max 26 chars for comment. Truncating to '{cmt}'")
+        cmt = cmt[:CMT_MAXLEN+1]
+    res.write(f'CMT"{cmt}"')
 res.write('CPYM1')
 res.write('PLTF1')
 header=res.query('SENDPS') # only for CPYM1 !
