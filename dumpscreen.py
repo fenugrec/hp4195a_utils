@@ -18,7 +18,7 @@ hp2xx_bin = shutil.which('hp2xx')
 
 def main():
     parser = argparse.ArgumentParser(description="HP 4195A screenshot tool")
-    parser.add_argument('-i', help='run in looping interactive mode')
+    parser.add_argument('-i', action='store_true', help='run in looping interactive mode')
     parser.add_argument('-r', '--res', help='optional, full VISA resource string like TCPIP::x.y.z.w::5025::SOCKET')
     parser.add_argument('-c', '--cmt', help='optional, plot top comment')
     parser.add_argument('-f', '--file', help='output file basename (no extension)')
@@ -39,12 +39,32 @@ def main():
         print("ID query doesn't match HP4195 ?")
         quit()
 
-    if args.i is None:
+    if not args.i:
         #running in single shot mode, need filename
         if args.file is None:
             print("error, need filename if running non-interactively")
             quit()
         save_screenshot(hp_res, args.file, args.cmt)
+    else:
+        #loop
+        if args.file:
+            print("(note: filename arg is ignored in interactive mode")
+        if args.cmt:
+            print("(note: comment arg is ignored in interactive mode")
+        print("Starting interactive mode. Input empty comment & file names to end.")
+        while 1:
+            print("*******************")
+            cmt=input("Enter optional plot comment (max 26 chars)")
+            fn_basic = cmt
+            fn=input(f"filename, or press enter to use '{fn_basic}'")
+            if (cmt =='') and (fn == ''):
+                quit()
+            if (fn == ''):
+                fn = fn_basic
+            save_screenshot(hp_res, fn, cmt)
+
+
+
 
 
 #args : pyvisa resource, filename, optional comment
