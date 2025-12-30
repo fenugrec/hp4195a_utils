@@ -8,7 +8,7 @@ It can run in one-shot mode saving one screenshot, optionally adding a title to 
 
 ![](demo.gif)
 
-![](samples/sample.gif)
+![](samples/sample.png)
 
 It also saves the original HPGL data, in case you need to re-process with less horrendous colors.
 
